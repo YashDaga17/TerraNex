@@ -1,0 +1,12 @@
+{
+  "name": "nexus-ai-perp",
+  "private": true,
+  "scripts": {
+    "fmt": "cargo fmt --all",
+    "orchestrator": "cargo run -p nexus-orchestrator",
+    "agent": "npm --prefix ai_agent run dev"
+  },
+  "devDependencies": {
+    "@coral-xyz/anchor": "^0.32.1"
+  }
+}

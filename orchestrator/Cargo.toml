@@ -1,0 +1,27 @@
+[package]
+name = "nexus-orchestrator"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[features]
+default = []
+kafka = ["rdkafka"]
+redis-cache = ["redis"]
+yellowstone = ["yellowstone-grpc-client", "yellowstone-grpc-proto"]
+
+[dependencies]
+anyhow = "1"
+axum = { version = "0.7", features = ["ws"] }
+futures-util = "0.3"
+rdkafka = { version = "0.36", optional = true }
+redis = { version = "0.25", features = ["tokio-comp"], optional = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.5", features = ["cors"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["serde", "v4"] }
+yellowstone-grpc-client = { version = "=13.1.0", optional = true }
+yellowstone-grpc-proto = { version = "=12.4.0", optional = true }
