@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NEXUS AI-Perp Local Demo</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0d1117;
+        --panel: #141922;
+        --panel-2: #191f2b;
+        --line: #2a3241;
+        --text: #ecf2ff;
+        --muted: #9aa8bd;
+        --green: #47d18c;
+        --cyan: #56c7ff;
+        --amber: #ffc857;
+        --red: #ff6b6b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      .shell {
+        width: min(1280px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 24px 0 36px;
+      }
+
+      header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 20px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(28px, 4vw, 52px);
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      .sub {
+        color: var(--muted);
+        margin-top: 10px;
+        max-width: 680px;
+      }
+
+      .status-row,
+      .metrics,
+      .controls,
+      .step-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .pill {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--muted);
+        border-radius: 999px;
+        padding: 7px 11px;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .pill.live {
+        color: var(--green);
+        border-color: rgba(71, 209, 140, 0.45);
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: minmax(280px, 0.95fr) minmax(340px, 1.45fr) minmax(280px, 0.9fr);
+        gap: 16px;
+        margin-top: 18px;
+      }
+
+      section,
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      section {
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .section-head {
+        padding: 16px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      h2 {
+        font-size: 16px;
+        letter-spacing: 0;
+      }
+
+      .body {
+        padding: 16px;
+      }
+
+      label {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        margin: 0 0 7px;
+      }
+
+      input,
+      select {
+        width: 100%;
+        height: 42px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: #0f141d;
+        color: var(--text);
+        padding: 0 12px;
+        font-size: 14px;
+      }
+
+      .field {
+        margin-bottom: 13px;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      button {
+        width: 100%;
+        height: 44px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--cyan);
+        color: #071019;
+        font-weight: 750;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        opacity: 0.62;
+        cursor: not-allowed;
+      }
+
+      .metric {
+        flex: 1;
+        min-width: 132px;
+        padding: 12px;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .metric b {
+        display: block;
+        font-size: 20px;
+        margin-top: 4px;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 10px;
+      }
+
+      .event {
+        display: grid;
+        grid-template-columns: 90px 1fr;
+        gap: 12px;
+        padding: 12px;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .event time {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .event strong {
+        display: block;
+        margin-bottom: 3px;
+      }
+
+      .event span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .event.final {
+        border-color: rgba(71, 209, 140, 0.55);
+      }
+
+      .agent-lines {
+        display: grid;
+        gap: 9px;
+      }
+
+      .agent-line,
+      .contract-row {
+        padding: 10px 12px;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .agent-line.active {
+        color: var(--text);
+        border-color: rgba(86, 199, 255, 0.45);
+      }
+
+      .contract-list {
+        display: grid;
+        gap: 9px;
+      }
+
+      .contract-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .contract-row b {
+        color: var(--text);
+      }
+
+      .mono {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      }
+
+      .warn {
+        color: var(--amber);
+      }
+
+      @media (max-width: 980px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+
+        header {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div>
+          <h1>NEXUS AI-Perp</h1>
+          <p class="sub">Local intent demo with agent trigger, WebSocket auction, solver quote, and Anchor contract path.</p>
+        </div>
+        <div class="status-row">
+          <span class="pill live" id="serverStatus">orchestrator live</span>
+          <span class="pill" id="socketStatus">socket idle</span>
+          <span class="pill">Anchor v0.32.1</span>
+          <span class="pill">SessionTokenV2</span>
+        </div>
+      </header>
+
+      <main>
+        <section>
+          <div class="section-head">
+            <h2>Intent</h2>
+          </div>
+          <div class="body">
+            <div class="field">
+              <label for="pair">Pair</label>
+              <select id="pair">
+                <option>SOL-PERP</option>
+                <option>JUP-PERP</option>
+                <option>JTO-PERP</option>
+              </select>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label for="side">Side</label>
+                <select id="side">
+                  <option value="long">Long</option>
+                  <option value="short">Short</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="size">Size</label>
+                <input id="size" type="number" min="1" value="1" />
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label for="limit">Limit Price</label>
+                <input id="limit" type="number" min="1" value="150000000" />
+              </div>
+              <div class="field">
+                <label for="slippage">Slippage Bps</label>
+                <input id="slippage" type="number" min="1" value="50" />
+              </div>
+            </div>
+            <button id="run">Run Local Auction</button>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-head">
+            <h2>Realtime Auction</h2>
+          </div>
+          <div class="body">
+            <div class="metrics">
+              <div class="metric">
+                <span class="pill">best price</span>
+                <b id="bestPrice">--</b>
+              </div>
+              <div class="metric">
+                <span class="pill">solver</span>
+                <b id="solver">--</b>
+              </div>
+              <div class="metric">
+                <span class="pill">fill</span>
+                <b id="fill">--</b>
+              </div>
+            </div>
+            <div class="timeline" id="timeline" style="margin-top: 14px"></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-head">
+            <h2>Agent + Contract</h2>
+          </div>
+          <div class="body">
+            <div class="agent-lines" id="agentLines">
+              <div class="agent-line active">AI watcher armed: price trigger ready</div>
+              <div class="agent-line">Gemini hook: local mock until API key is added</div>
+              <div class="agent-line">Session scope: pair cap + slot TTL</div>
+            </div>
+
+            <div class="contract-list" style="margin-top: 14px">
+              <div class="contract-row"><b>initialize</b><span>vault + protocol</span></div>
+              <div class="contract-row"><b>delegate</b><span>session key</span></div>
+              <div class="contract-row"><b>submit_intent</b><span>SessionTokenV2</span></div>
+              <div class="contract-row"><b>resolve</b><span>solver settle</span></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const byId = (id) => document.getElementById(id);
+      const timeline = byId("timeline");
+      const run = byId("run");
+      const socketStatus = byId("socketStatus");
+      const bestPrice = byId("bestPrice");
+      const solver = byId("solver");
+      const fill = byId("fill");
+      const agentLines = byId("agentLines");
+
+      const now = () => new Date().toLocaleTimeString([], { hour12: false });
+      const short = (value) => String(value).slice(0, 8);
+
+      function addEvent(title, detail, final = false) {
+        const item = document.createElement("div");
+        item.className = `event${final ? " final" : ""}`;
+        item.innerHTML = `<time>${now()}</time><div><strong>${title}</strong><span>${detail}</span></div>`;
+        timeline.prepend(item);
+      }
+
+      function addAgentLine(text) {
+        const item = document.createElement("div");
+        item.className = "agent-line active";
+        item.textContent = text;
+        agentLines.prepend(item);
+      }
+
+      function fakeSignature() {
+        const bytes = crypto.getRandomValues(new Uint8Array(48));
+        return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+      }
+
+      function buildIntent() {
+        return {
+          id: crypto.randomUUID(),
+          owner: "demo-authority",
+          session: "demo-session-token-v2",
+          pair: byId("pair").value,
+          side: byId("side").value,
+          size: Number(byId("size").value),
+          limit_price: Number(byId("limit").value),
+          max_slippage_bps: Number(byId("slippage").value),
+          expires_slot: 999999999,
+          signature: fakeSignature(),
+        };
+      }
+
+      run.addEventListener("click", () => {
+        const intent = buildIntent();
+        const ws = new WebSocket(`ws://${location.host}/ws/intents`);
+
+        run.disabled = true;
+        socketStatus.textContent = "socket connecting";
+        timeline.innerHTML = "";
+        bestPrice.textContent = "--";
+        solver.textContent = "--";
+        fill.textContent = "--";
+        addAgentLine(`Gemini-style agent emitted ${intent.side} ${intent.pair} intent`);
+
+        ws.addEventListener("open", () => {
+          socketStatus.textContent = "socket live";
+          addEvent("intent signed", `${short(intent.id)} sent with scoped session token`);
+          ws.send(JSON.stringify(intent));
+        });
+
+        ws.addEventListener("message", (event) => {
+          const message = JSON.parse(event.data);
+
+          if (message.event === "intent_accepted") {
+            addEvent("intent accepted", `${message.side} ${message.size} ${message.pair} at ${message.limit_price}`);
+            return;
+          }
+
+          if (message.event === "solver_quote" || message.event === "final_quote") {
+            bestPrice.textContent = message.execution_price;
+            solver.textContent = message.solver;
+            fill.textContent = message.filled_size;
+            addEvent(
+              message.event === "final_quote" ? "winner selected" : `solver quote ${message.step}/5`,
+              `${message.solver} quotes ${message.execution_price}`,
+              message.event === "final_quote"
+            );
+
+            if (message.event === "final_quote") {
+              addAgentLine("resolve instruction ready for Anchor settlement");
+              socketStatus.textContent = "auction complete";
+              run.disabled = false;
+              ws.close();
+            }
+          }
+        });
+
+        ws.addEventListener("close", () => {
+          if (run.disabled) run.disabled = false;
+        });
+
+        ws.addEventListener("error", () => {
+          socketStatus.textContent = "socket error";
+          addEvent("socket error", "orchestrator connection failed");
+          run.disabled = false;
+        });
+      });
+    </script>
+  </body>
+</html>

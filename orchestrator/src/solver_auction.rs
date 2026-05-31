@@ -1,37 +1,39 @@
 use crate::SignedIntent;
 use serde::Serialize;
-use tokio::time::{sleep, Duration};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Quote {
+    pub event: &'static str,
     pub intent_id: Uuid,
     pub solver: String,
     pub execution_price: u64,
     pub filled_size: u64,
     pub slot_hint: u64,
+    pub step: u8,
 }
 
-pub async fn run_auction(intent: &SignedIntent) -> Quote {
-    let mut best = Quote {
+pub fn quote_for_step(intent: &SignedIntent, step: u8) -> Quote {
+    let step = step.clamp(1, 5);
+    let improvement = intent
+        .limit_price
+        .saturating_mul(step as u64)
+        .saturating_div(10_000);
+
+    Quote {
+        event: if step == 5 {
+            "final_quote"
+        } else {
+            "solver_quote"
+        },
         intent_id: intent.id,
         solver: "solver-local".to_string(),
-        execution_price: intent.limit_price,
-        filled_size: intent.size,
-        slot_hint: intent.expires_slot.saturating_sub(1),
-    };
-
-    for step in 1..=5 {
-        sleep(Duration::from_millis(300)).await;
-        let improvement = intent
-            .limit_price
-            .saturating_mul(step)
-            .saturating_div(10_000);
-        best.execution_price = match intent.side.as_str() {
+        execution_price: match intent.side.as_str() {
             "short" => intent.limit_price.saturating_add(improvement),
             _ => intent.limit_price.saturating_sub(improvement),
-        };
+        },
+        filled_size: intent.size,
+        slot_hint: intent.expires_slot.saturating_sub(1),
+        step,
     }
-
-    best
 }

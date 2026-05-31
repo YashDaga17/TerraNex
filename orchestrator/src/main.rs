@@ -1,6 +1,7 @@
 mod grpc_stream;
 mod kafka_producer;
 mod solver_auction;
+mod ui;
 
 use axum::{
     extract::ws::{Message, WebSocket, WebSocketUpgrade},
@@ -10,8 +11,10 @@ use axum::{
 };
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use solver_auction::{run_auction, Quote};
+use serde_json::json;
+use solver_auction::{quote_for_step, Quote};
 use std::net::SocketAddr;
+use tokio::time::{sleep, Duration};
 use tower_http::cors::CorsLayer;
 use tracing::{info, warn};
 use uuid::Uuid;
@@ -44,6 +47,7 @@ async fn main() -> anyhow::Result<()> {
     tokio::spawn(grpc_stream::run());
 
     let app = Router::new()
+        .route("/", get(ui::index))
         .route("/health", get(|| async { Json(Health { status: "ok" }) }))
         .route("/ws/intents", get(intent_ws))
         .layer(CorsLayer::permissive());
@@ -80,10 +84,28 @@ async fn handle_socket(socket: WebSocket) {
         };
 
         kafka_producer::publish_intent(&intent).await;
-        let quote = run_auction(&intent).await;
-        if let Err(err) = send_quote(&mut sender, &quote).await {
+        let accepted = json!({
+            "event": "intent_accepted",
+            "intent_id": intent.id,
+            "owner": intent.owner,
+            "pair": intent.pair,
+            "side": intent.side,
+            "size": intent.size,
+            "limit_price": intent.limit_price
+        });
+
+        if let Err(err) = send_json(&mut sender, &accepted).await {
             warn!("failed to send quote: {err}");
             break;
+        }
+
+        for step in 1..=5 {
+            sleep(Duration::from_millis(300)).await;
+            let quote = quote_for_step(&intent, step);
+            if let Err(err) = send_quote(&mut sender, &quote).await {
+                warn!("failed to send quote: {err}");
+                break;
+            }
         }
     }
 }
@@ -95,5 +117,13 @@ async fn send_quote(
     sender
         .send(Message::Text(serde_json::to_string(quote)?))
         .await?;
+    Ok(())
+}
+
+async fn send_json(
+    sender: &mut futures_util::stream::SplitSink<WebSocket, Message>,
+    value: &serde_json::Value,
+) -> anyhow::Result<()> {
+    sender.send(Message::Text(value.to_string())).await?;
     Ok(())
 }

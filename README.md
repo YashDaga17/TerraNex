@@ -21,6 +21,8 @@ npm --prefix ai_agent install
 npm --prefix ai_agent run dev
 ```
 
+Open `http://127.0.0.1:8080/` for the local dashboard. Click `Run Local Auction` to watch the agent intent, solver auction, final quote, and Anchor contract path update in realtime.
+
 Anchor build requires the Solana and Anchor toolchains plus the MagicBlock session-keys program for local session-token tests.
 
 ## Deploy

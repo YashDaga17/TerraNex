@@ -5,8 +5,18 @@ export function sendIntent(url: string, intent: unknown) {
 
   ws.on("open", () => ws.send(JSON.stringify(intent)));
   ws.on("message", (data) => {
-    console.log("solver quote", data.toString());
-    ws.close();
+    const raw = data.toString();
+    try {
+      const message = JSON.parse(raw) as { event?: string };
+      if (message.event === "final_quote") {
+        console.log("solver quote", raw);
+        ws.close();
+        return;
+      }
+      console.log("auction update", raw);
+    } catch {
+      console.log("orchestrator message", raw);
+    }
   });
   ws.on("error", (err) => console.error("orchestrator error", err.message));
 }
